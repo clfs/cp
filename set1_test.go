@@ -1,7 +1,9 @@
 package cp
 
 import (
+	"bytes"
 	"encoding/hex"
+	"os"
 	"testing"
 )
 
@@ -54,4 +56,31 @@ func TestChallenge03(t *testing.T) {
 		t.Errorf("got %v, want %v", got, want)
 	}
 	t.Logf("%s", XORRepeat(ct, got))
+}
+
+func helperReadHexCiphertexts(tb testing.TB, path string) [][]byte {
+	tb.Helper()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		tb.Fatal(err)
+	}
+	cts := bytes.Split(data, []byte("\n"))
+	var got [][]byte
+	for _, ct := range cts {
+		got = append(got, helperHexDecode(tb, string(ct)))
+	}
+	return got
+}
+
+func TestChallenge04(t *testing.T) {
+	t.Parallel()
+	cts := helperReadHexCiphertexts(t, "testdata/4.txt")
+	want := helperHexDecode(t, "7b5a4215415d544115415d5015455447414c155c46155f4058455c5b523f")
+
+	got := DetectSingleXOR(cts)
+	if !bytes.Equal(got, want) {
+		t.Errorf("got %x, want %x", got, want)
+	}
+
+	t.Logf("%s", XORRepeat(got, FindXORKey(got)))
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"os"
 )
 
 func HexToBase64(s string) (string, error) {
@@ -65,16 +66,44 @@ func FindXORKey(ct []byte) byte {
 	return bestKey
 }
 
+func init() {
+	RuneFrequencies = make(map[rune]float64)
+	data, err := os.ReadFile("misc/english.txt")
+	if err != nil {
+		panic(err)
+	}
+	for _, r := range string(data) {
+		RuneFrequencies[r]++
+	}
+	scale := float64(len(data))
+	for k, v := range RuneFrequencies {
+		RuneFrequencies[k] = v / scale
+	}
+}
+
+var RuneFrequencies map[rune]float64
+
 func ScoreEnglish(s string) float64 {
 	var score float64
-	for _, c := range s {
-		if c >= 'a' && c <= 'z' {
-			score += 1.0
-		} else if c >= 'A' && c <= 'Z' {
-			score += 0.5
-		} else if c >= '0' && c <= '9' {
-			score += 0.25
+	for _, r := range s {
+		if _, ok := RuneFrequencies[r]; ok {
+			score += RuneFrequencies[r]
 		}
 	}
 	return score
+}
+
+func DetectSingleXOR(cts [][]byte) []byte {
+	var best []byte
+	var maxScore float64
+	for _, ct := range cts {
+		key := FindXORKey(ct)
+		pt := XORRepeat(ct, key)
+		score := ScoreEnglish(string(pt))
+		if score > maxScore {
+			maxScore = score
+			best = ct
+		}
+	}
+	return best
 }
