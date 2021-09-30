@@ -49,6 +49,14 @@ func XORRepeat(a []byte, b byte) []byte {
 	return out
 }
 
+func XORCycle(a []byte, b []byte) []byte {
+	out := make([]byte, len(a))
+	for i := range a {
+		out[i] = a[i] ^ b[i%len(b)]
+	}
+	return out
+}
+
 func FindXORKey(ct []byte) byte {
 	scores := make([]float64, 256)
 	for i := 0; i < 256; i++ {
