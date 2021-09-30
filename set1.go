@@ -39,3 +39,42 @@ func XOR(a, b []byte) []byte {
 	}
 	return out
 }
+
+func XORRepeat(a []byte, b byte) []byte {
+	out := make([]byte, len(a))
+	for i := range a {
+		out[i] = a[i] ^ b
+	}
+	return out
+}
+
+func FindXORKey(ct []byte) byte {
+	scores := make([]float64, 256)
+	for i := 0; i < 256; i++ {
+		pt := XORRepeat(ct, byte(i))
+		scores[i] = ScoreEnglish(string(pt))
+	}
+	var max float64
+	var bestKey byte
+	for i, s := range scores {
+		if s > max {
+			max = s
+			bestKey = byte(i)
+		}
+	}
+	return bestKey
+}
+
+func ScoreEnglish(s string) float64 {
+	var score float64
+	for _, c := range s {
+		if c >= 'a' && c <= 'z' {
+			score += 1.0
+		} else if c >= 'A' && c <= 'Z' {
+			score += 0.5
+		} else if c >= '0' && c <= '9' {
+			score += 0.25
+		}
+	}
+	return score
+}
