@@ -2,6 +2,7 @@ package cp
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/hex"
 	"os"
 	"testing"
@@ -95,4 +96,43 @@ func TestChallenge05(t *testing.T) {
 	if !bytes.Equal(got, want) {
 		t.Errorf("got %x, want %x", got, want)
 	}
+}
+
+func TestHamming(t *testing.T) {
+	t.Parallel()
+	var (
+		a    = "this is a test"
+		b    = "wokka wokka!!!"
+		want = 37
+	)
+	got := Hamming([]byte(a), []byte(b))
+	if got != want {
+		t.Errorf("got %v, want %v", got, want)
+	}
+}
+
+func helperReadBase64Ciphertext(tb testing.TB, path string) []byte {
+	tb.Helper()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		tb.Fatal(err)
+	}
+	ct, err := base64.StdEncoding.DecodeString(string(data))
+	if err != nil {
+		tb.Fatal(err)
+	}
+	return ct
+}
+
+func TestChallenge06(t *testing.T) {
+	t.Parallel()
+	ct := helperReadBase64Ciphertext(t, "testdata/6.txt")
+	want := []byte("Terminator X: Bring the noise")
+
+	got := BreakRepeatingKeyXOR(ct)
+	if !bytes.Equal(got, want) {
+		t.Errorf("got %q, want %q", got, want)
+	}
+
+	t.Logf("%s", XORCycle(ct, got))
 }

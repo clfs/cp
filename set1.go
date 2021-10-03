@@ -4,6 +4,8 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"math"
+	"math/bits"
 	"os"
 )
 
@@ -114,4 +116,45 @@ func DetectSingleXOR(cts [][]byte) []byte {
 		}
 	}
 	return best
+}
+
+func Hamming(a, b []byte) int {
+	if len(a) != len(b) {
+		panic("different lengths")
+	}
+	var d int
+	for i := range a {
+		d += bits.OnesCount(uint(a[i] ^ b[i]))
+	}
+	return d
+}
+
+func BreakRepeatingKeyXOR(ct []byte) []byte {
+	var bestKeySize int
+	bestKeySizeScore := math.MaxFloat64
+	for keySize := 2; keySize <= 40; keySize++ {
+		a, b := ct[:keySize*4], ct[keySize*4:keySize*8]
+		score := float64(Hamming(a, b)) / float64(keySize)
+		if score < bestKeySizeScore {
+			bestKeySizeScore = score
+			bestKeySize = keySize
+		}
+	}
+	chunkSize := (len(ct) + bestKeySize - 1) / bestKeySize
+
+	var (
+		key   = make([]byte, bestKeySize)
+		chunk = make([]byte, chunkSize)
+	)
+
+	for i := range key {
+		for j := range chunk {
+			if k := j*bestKeySize + i; k < len(ct) {
+				chunk[j] = ct[k]
+			}
+		}
+		key[i] = FindXORKey(chunk)
+	}
+
+	return key
 }
