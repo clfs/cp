@@ -2,9 +2,11 @@ package cp
 
 import (
 	"bytes"
+	"crypto/aes"
 	"encoding/base64"
 	"encoding/hex"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -135,4 +137,23 @@ func TestChallenge06(t *testing.T) {
 	}
 
 	t.Logf("%s", XORCycle(ct, got))
+}
+
+func TestChallenge07(t *testing.T) {
+	t.Parallel()
+	ct := helperReadBase64Ciphertext(t, "testdata/7.txt")
+	key := "YELLOW SUBMARINE"
+
+	cipher, err := aes.NewCipher([]byte(key))
+	if err != nil {
+		t.Fatal(err)
+	}
+	decrypter := NewECBDecrypter(cipher)
+
+	got := make([]byte, len(ct))
+	decrypter.CryptBlocks(got, ct)
+
+	if !strings.HasPrefix(string(got), "I'm back and I'm ringin' the bell") {
+		t.Errorf("got %q", got)
+	}
 }

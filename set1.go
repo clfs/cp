@@ -1,6 +1,7 @@
 package cp
 
 import (
+	"crypto/cipher"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
@@ -157,4 +158,28 @@ func BreakRepeatingKeyXOR(ct []byte) []byte {
 	}
 
 	return key
+}
+
+type ecbDecrypter struct {
+	cipher.Block
+}
+
+func NewECBDecrypter(b cipher.Block) cipher.BlockMode {
+	return ecbDecrypter{b}
+}
+
+func (e ecbDecrypter) BlockSize() int {
+	return e.Block.BlockSize()
+}
+
+func (e ecbDecrypter) CryptBlocks(dst, src []byte) {
+	if len(src)%e.BlockSize() != 0 || len(dst) < len(src) {
+		panic("invalid length(s)")
+	}
+	b := e.BlockSize()
+	for len(src) > 0 {
+		e.Decrypt(dst, src)
+		src = src[b:]
+		dst = dst[b:]
+	}
 }
