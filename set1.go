@@ -183,3 +183,29 @@ func (e ecbDecrypter) CryptBlocks(dst, src []byte) {
 		dst = dst[b:]
 	}
 }
+
+func IsECB(ct []byte, bs int) bool {
+	if len(ct)%bs != 0 {
+		return false
+	}
+
+	seen := make(map[string]struct{})
+	for i := 0; i < len(ct); i += bs {
+		block := string(ct[i : i+bs])
+		if _, ok := seen[block]; ok {
+			return true
+		}
+		seen[block] = struct{}{}
+	}
+
+	return false
+}
+
+func DetectECB(cts [][]byte, bs int) ([]byte, bool) {
+	for _, ct := range cts {
+		if IsECB(ct, bs) {
+			return ct, true
+		}
+	}
+	return nil, false
+}
